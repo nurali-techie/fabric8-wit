@@ -21,12 +21,12 @@ import (
 	"github.com/fabric8-services/fabric8-wit/rest"
 	"github.com/fabric8-services/fabric8-wit/space"
 	"github.com/fabric8-services/fabric8-wit/spacetemplate"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/goadesign/goa"
 	goaclient "github.com/goadesign/goa/client"
 	goauuid "github.com/goadesign/goa/uuid"
 	errs "github.com/pkg/errors"
-	"github.com/satori/go.uuid"
 )
 
 const (
@@ -48,6 +48,7 @@ type SpaceController struct {
 	resourceManager   auth.ResourceManager
 	DeploymentsClient *http.Client
 	CodebaseClient    *http.Client
+	InitEnvironment   func(ctx context.Context, envType string) error
 }
 
 // NewSpaceController creates a space controller.
@@ -152,6 +153,13 @@ func (c *SpaceController) Create(ctx *app.CreateSpaceContext) error {
 		c.rollBackSpaceCreation(ctx, spaceID)
 		return jsonapi.JSONErrorResponse(ctx, err)
 	}
+
+	if c.InitEnvironment != nil {
+		go func(ctx context.Context) {
+			c.InitEnvironment(ctx, "jenkins")
+		}(ctx)
+	}
+
 	spaceData, err := ConvertSpaceFromModel(ctx.Request, *rSpace, IncludeBacklogTotalCount(ctx.Context, c.db))
 	if err != nil {
 		return jsonapi.JSONErrorResponse(ctx, err)

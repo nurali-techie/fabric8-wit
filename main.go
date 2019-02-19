@@ -35,7 +35,7 @@ import (
 	"github.com/fabric8-services/fabric8-wit/swagger"
 	"github.com/fabric8-services/fabric8-wit/token"
 	"github.com/goadesign/goa"
-	"github.com/goadesign/goa/logging/logrus"
+	goalogrus "github.com/goadesign/goa/logging/logrus"
 	"github.com/goadesign/goa/middleware"
 	"github.com/goadesign/goa/middleware/gzip"
 	goajwt "github.com/goadesign/goa/middleware/security/jwt"
@@ -302,6 +302,10 @@ func main() {
 
 	// Mount "space" controller
 	spaceCtrl := controller.NewSpaceController(service, appDB, config, auth.NewAuthzResourceManager(config))
+	if config.GetTenantServiceURL() != "" {
+		log.Logger().Infof("Enabling Init Environment service %v", config.GetTenantServiceURL())
+		spaceCtrl.InitEnvironment = account.NewInitEnvironment(config)
+	}
 	app.MountSpaceController(service, spaceCtrl)
 
 	// Mount "spaceTrackerQueries" controller

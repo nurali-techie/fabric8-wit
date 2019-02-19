@@ -27,6 +27,13 @@ func NewInitTenant(config tenantConfig) func(context.Context) error {
 	}
 }
 
+// NewInitEnvironment creates a new enviroment for tenant in oso
+func NewInitEnvironment(config tenantConfig) func(ctx context.Context, envType string) error {
+	return func(ctx context.Context, envType string) error {
+		return InitEnvironment(ctx, config, envType)
+	}
+}
+
 // NewUpdateTenant creates a new tenant service in oso
 func NewUpdateTenant(config tenantConfig) func(context.Context) error {
 	return func(ctx context.Context) error {
@@ -61,6 +68,21 @@ func InitTenant(ctx context.Context, config tenantConfig) error {
 
 	// Ignore response for now
 	res, err := c.SetupTenant(goasupport.ForwardContextRequestID(ctx), tenant.SetupTenantPath())
+	defer rest.CloseResponse(res)
+
+	return err
+}
+
+// InitEnvironment creates a new enviroment for tenant in oso
+func InitEnvironment(ctx context.Context, config tenantConfig, envType string) error {
+
+	c, err := createClient(ctx, config)
+	if err != nil {
+		return err
+	}
+
+	// Ignore response for now
+	res, err := c.SetupEnvTenant(goasupport.ForwardContextRequestID(ctx), tenant.SetupEnvTenantPath(envType))
 	defer rest.CloseResponse(res)
 
 	return err
